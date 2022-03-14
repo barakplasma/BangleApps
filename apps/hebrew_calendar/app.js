@@ -53,7 +53,7 @@ function getUpcomingEvents() {
   }
 
   return futureEvents
-    .slice(0, 5)
+    .slice(0, 2)
     .map((event, i) => {
       return {
         startEvent: event.startEvent,
@@ -118,14 +118,6 @@ function makeLayout() {
         .concat([
           {
             type: "txt",
-            font: "6x8",
-            id: "gregorian",
-            label: "Gregorian",
-            pad: 2,
-            bgCol: g.theme.bg2,
-          },
-          {
-            type: "txt",
             font: "Vector14",
             id: "time",
             label: dateTime(),
@@ -171,6 +163,7 @@ function findNextEvent() {
 function updateCalendar() {
   layout.clear();
   layout = makeLayout();
+  layout.forgetLazyState();
   layout.render();
 
   let nextChange = Math.min(
