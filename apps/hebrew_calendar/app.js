@@ -24,7 +24,7 @@ function getCurrentEvents() {
       font: "12x20",
       id: "currentEvents" + i,
       label: event.desc,
-      pad: 5,
+      pad: 2,
       bgCol: g.theme.bg,
     };
   });
@@ -49,7 +49,7 @@ function getUpcomingEvents() {
       font: "4x6",
       id: "warning",
       label: "only " + eventsLeft + " events left in calendar; update soon",
-      pad: 5,
+      pad: 2,
       bgCol: g.theme.bg,
     };
   }
