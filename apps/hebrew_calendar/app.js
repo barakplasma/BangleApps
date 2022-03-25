@@ -1,15 +1,17 @@
 const dayInMS = 86400000;
 
+const DateProvider = { now: () => Date.now() };
+
 const Layout = require("Layout");
 const Locale = require("locale");
 
 let nextEndingEvent;
 
 function getCurrentEvents() {
-  const now = Date.now();
+  const now = DateProvider.now();
 
   const current = hebrewCalendar.filter(
-    (x) => x.startEvent < now && x.endEvent > now
+    (x) => x.startEvent <= now && x.endEvent >= now
   );
 
   nextEndingEvent = current.reduce((acc, ev) => {
@@ -29,15 +31,15 @@ function getCurrentEvents() {
 }
 
 function getUpcomingEvents() {
-  const now = Date.now();
+  const now = DateProvider.now();
 
   const futureEvents = hebrewCalendar.filter(
-    (x) => x.startEvent > now && x.startEvent < now + dayInMS
+    (x) => x.startEvent >= now && x.startEvent <= now + dayInMS
   );
 
   let warning;
   let eventsLeft = hebrewCalendar.filter(
-    (x) => x.startEvent > now && x.startEvent < now + dayInMS * 14
+    (x) => x.startEvent >= now && x.startEvent <= now + dayInMS * 14
   ).length;
 
   if (eventsLeft < 14) {
@@ -144,7 +146,7 @@ function draw() {
   drawTimeout = setTimeout(function () {
     drawTimeout = undefined;
     draw();
-  }, 60000 - (Date.now() % 60000));
+  }, 60000 - (DateProvider.now() % 60000));
   console.log("updated time");
 }
 
@@ -156,7 +158,7 @@ draw();
 
 function findNextEvent() {
   return hebrewCalendar.find((ev) => {
-    return ev.startEvent > Date.now();
+    return ev.startEvent > DateProvider.now();
   });
 }
 
@@ -167,8 +169,8 @@ function updateCalendar() {
   layout.render();
 
   let nextChange = Math.min(
-    findNextEvent().startEvent - Date.now() + 5000,
-    nextEndingEvent - Date.now() + 5000
+    findNextEvent().startEvent - DateProvider.now() + 5000,
+    nextEndingEvent - DateProvider.now() + 5000
   );
   setTimeout(updateCalendar, nextChange);
   console.log("updated events");
