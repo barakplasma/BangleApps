@@ -1,33 +1,33 @@
 # Hebrew Calendar
 
-Displays the current hebrew calendar date and upcoming holidays alongside a clock
+Displays the current Hebrew calendar date and upcoming holidays alongside a clock.
 
 ![](./HebrewCalendar-Screenshot.png)
 
 ## Usage
 
-Set it up as your clock in the settings.
+Set it as your clock in the settings.
 
-**You must configure it first:** in the app loader, click "Customize" and set your
-location. This generates the calendar (including candle-lighting times) for your area.
-Until you do, the clock shows a reminder instead of events.
+The app computes events on-device — no web customizer or internet connection needed.
+
+**Location:** Install the [My Location](https://banglejs.com/apps/?q=mylocation) app and set your coordinates for accurate candle-lighting times. If My Location is not installed, the app defaults to Jerusalem coordinates.
+
+**Settings:** Open Settings → Hebrew Calendar to toggle between Israeli and Diaspora holiday observance (affects second days of holidays and the length of Passover).
 
 ## Features
 
-- Shows the hebrew date, month, and year; alongside the gregorian date
-- Shows when upcoming holidays start
-- Shows the gregorian day of week, date, and current time
+- Shows the Hebrew date, month, and year alongside the Gregorian date
+- Shows when upcoming holidays start, including candle-lighting times
+- Shabbat candle-lighting and Havdalah times based on your location
+- Computes the next 7 days of events at runtime — always up to date, no expiry
+- Powered by [hebcal/hebcal-es6](https://github.com/hebcal/hebcal-es6) (MIT license) bundled on-device
 
 ## Controls
 
 N/A
 
-## Requests
-
-Michael Salaverry (github.com/barakplasma)
-
 ## Creator
 
-Michael Salaverry
-with help from https://github.com/hebcal/hebcal-es6 (MIT license) which is used to calculate the calendar
-<div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">[www.flaticon.com](https://www.flaticon.com/premium-icon/calendar_3130060?term=jewish&page=1&position=10&page=1&position=10&related_id=3130060&origin=tag)</a></div>
+Michael Salaverry (github.com/barakplasma)
+with help from https://github.com/hebcal/hebcal-es6 (MIT license)
+<div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
