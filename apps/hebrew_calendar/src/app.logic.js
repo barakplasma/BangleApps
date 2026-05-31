@@ -239,15 +239,6 @@ hebrewCalendar = computeEvents();
 layout = makeLayout();
 draw();
 
-function updateCalendar() {
-  hebrewCalendar = computeEvents();
-  layout.clear();
-  layout = makeLayout();
-  layout.forgetLazyState();
-  layout.render();
-  queueNextUpdate();
-}
-
 // Return the next sunset time (today's if it's still in the future, otherwise tomorrow's).
 function nextSunset() {
   var now = new Date();
@@ -258,12 +249,20 @@ function nextSunset() {
   return sunsetOn(tomorrowNoon);
 }
 
-// Schedule the next updateCalendar call to fire 5 s after the next sundown.
+// Schedule a sched alarm to reload the app 5 s after the next sundown.
 // The Hebrew day turns at sunset, so that's the natural point to recompute the
 // upcoming 72-hour window.
 function queueNextUpdate() {
   var msUntilSunset = nextSunset().getTime() - Date.now();
-  setTimeout(updateCalendar, msUntilSunset + 5000);
+  var sched = require("sched");
+  sched.setAlarm("hcal_refresh", {
+    timer: msUntilSunset + 5000,
+    js: "load('hebrew_calendar.app.js');",
+    del: true,
+    hidden: true,
+    on: true,
+  });
+  sched.reload();
 }
 
 queueNextUpdate();

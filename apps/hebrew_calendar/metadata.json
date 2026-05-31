@@ -7,7 +7,7 @@
   "icon": "app.png",
   "allow_emulator": true,
   "tags": "clocks,tools",
-  "dependencies": { "mylocation": "app" },
+  "dependencies": { "mylocation": "app", "sched": "app" },
   "supports": [
     "BANGLEJS",
     "BANGLEJS2"
