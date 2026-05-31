@@ -1,5 +1,5 @@
 const { execSync } = require("child_process");
-const { readFileSync } = require("fs");
+const { readFileSync, statSync } = require("fs");
 const https = require("https");
 
 function usage(){
@@ -39,7 +39,9 @@ async function main() {
       sort |
       uniq`,
     { encoding: "utf8" }
-  ).split("\n").filter(x => x);
+  ).split("\n").filter(x => x).filter(app => {
+    try { return statSync(app).isDirectory(); } catch { return false; }
+  });
 
   if(apps.length === 0) process.exit(1); // pipeline failed
 
