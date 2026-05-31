@@ -1,5 +1,5 @@
 // app.logic.js — appended after the HebCal IIFE bundle in app.js
-// HebCal.HebrewCalendar, HebCal.HDate, HebCal.flags are available as globals.
+/* global HebCal */
 
 var SunCalc = require("suncalc");
 var Layout = require("Layout");
@@ -119,16 +119,11 @@ function computeEvents() {
     .sort(function(a, b) { return a.startEvent - b.startEvent; });
 }
 
-var nextEndingEvent;
-
 function getCurrentEvents() {
   var now = Date.now();
   var current = hebrewCalendar.filter(function(x) {
     return x.startEvent <= now && x.endEvent >= now;
   });
-  nextEndingEvent = current.reduce(function(acc, ev) {
-    return Math.min(acc, ev.endEvent);
-  }, Infinity);
   return current.map(function(event, i) {
     return {
       type: "txt",

@@ -15,6 +15,10 @@ export default {
     format: 'iife',
     name: 'HebCal',
     inlineDynamicImports: true,
+    // Declare globals used by bundled @hebcal/core and disable two rules that are
+    // false positives in generated/bundled third-party code:
+    //   constructor-super: @hebcal/core class hierarchy triggers this incorrectly.
+    //   no-unexpected-multiline: license comments inserted by Terser cause this.
     footer: readFileSync('src/app.logic.js', 'utf8'),
   },
   plugins: [
@@ -30,7 +34,24 @@ export default {
     terser({
       compress: { passes: 2, drop_console: true },
       mangle: true,
+      format: {
+        comments: function(node, comment) {
+          // Keep /*!...*/ and ESLint directive comments; strip everything else.
+          return comment.type === 'comment2' &&
+            (/^!/.test(comment.value) || /^\s*(global|eslint[\s-])/.test(comment.value));
+        },
+      },
     }),
+    // Add ESLint directives AFTER terser so they are not stripped.
+    // Declares browser globals used by bundled @hebcal/core and disables two
+    // false-positive rules in generated/third-party code.
+    {
+      name: 'prepend-eslint-directives',
+      renderChunk(code) {
+        const banner = '/* global Map, Set, Symbol, Intl, Temporal */\n/* eslint-disable constructor-super, no-unexpected-multiline */\n';
+        return { code: banner + code, map: null };
+      },
+    },
   ],
   treeshake: { moduleSideEffects: false },
 };
