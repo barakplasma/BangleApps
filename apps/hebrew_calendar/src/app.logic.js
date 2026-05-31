@@ -5,7 +5,11 @@ var SunCalc = require("suncalc");
 var Layout = require("Layout");
 var Locale = require("locale");
 
-var loc = require("Storage").readJSON("mylocation.json", 1) || { lat: 31.78, lon: 35.23 };
+var loc = require("Storage").readJSON("mylocation.json", 1) || {};
+if (typeof loc.lat !== "number" || typeof loc.lon !== "number") {
+  loc.lat = 31.78;
+  loc.lon = 35.23;
+}
 var appSettings = require("Storage").readJSON("hebrew_calendar.json", 1) || { inIsrael: false };
 
 var dayInMS = 86400000;
@@ -241,7 +245,10 @@ function updateCalendar() {
   layout = makeLayout();
   layout.forgetLazyState();
   layout.render();
+  queueNextUpdate();
+}
 
+function queueNextUpdate() {
   var now = Date.now();
   var nextChange = dayInMS;
 
@@ -257,4 +264,4 @@ function updateCalendar() {
   setTimeout(updateCalendar, nextChange);
 }
 
-updateCalendar();
+queueNextUpdate();
