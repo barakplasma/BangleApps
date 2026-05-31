@@ -11,7 +11,8 @@ function sunsetOn(date, lat, lon) {
 }
 
 /**
- * Compute Hebrew calendar events for the ~9-day window around `now`.
+ * Compute Hebrew calendar events for the 72-hour window ahead of `now`
+ * (plus yesterday, to include currently-active events that began at yesterday's sunset).
  *
  * Returns the same events that app.logic.js's computeEvents() would produce on
  * the watch for the same location, Israel flag, and reference moment.
@@ -30,7 +31,7 @@ export function computeEvents(loc, inIsrael, now) {
   today.setHours(0, 0, 0, 0);
 
   const rangeStart = new Date(today.getTime() - DAY_MS);
-  const rangeEnd   = new Date(today.getTime() + 8 * DAY_MS);
+  const rangeEnd   = new Date(today.getTime() + 3 * DAY_MS);
 
   const rawEvents = HebrewCalendar.calendar({
     il,
@@ -85,7 +86,7 @@ export function computeEvents(loc, inIsrael, now) {
   }
 
   // Shabbat events (HebrewCalendar.calendar without candlelighting:true omits them)
-  for (let i = -1; i <= 8; i++) {
+  for (let i = -1; i <= 3; i++) {
     const d   = new Date(today.getTime() + i * DAY_MS);
     const dow = d.getDay();
     if (dow === 5) {

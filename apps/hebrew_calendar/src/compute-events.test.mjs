@@ -113,7 +113,7 @@ describe('Shabbat invariants', () => {
         // can legitimately exclude the i=-1 Friday's candle lighting if `now` is on
         // a Saturday whose exact ms value makes the Friday sunset - 3 min boundary
         // exactly equal nowMs - DAY_MS (strict >).
-        for (let i = 0; i <= 8; i++) {
+        for (let i = 0; i <= 3; i++) {
           const d = new Date(today.getTime() + i * DAY_MS);
           if (d.getDay() !== 5) continue;
 
@@ -142,7 +142,7 @@ describe('Shabbat invariants', () => {
         // Same reasoning as the Friday test: start from i=0 to avoid the
         // i=-1 Saturday whose Shabbat endEvent can sit exactly on the filter
         // boundary when now is the following Sunday at the right exact ms.
-        for (let i = 0; i <= 8; i++) {
+        for (let i = 0; i <= 3; i++) {
           const d = new Date(today.getTime() + i * DAY_MS);
           if (d.getDay() !== 6) continue;
 
@@ -204,7 +204,7 @@ describe('location sensitivity', () => {
         const today = new Date(now);
         today.setHours(0, 0, 0, 0);
         let fridayNoon = null;
-        for (let i = 0; i <= 8; i++) {
+        for (let i = 0; i <= 3; i++) {
           const d = new Date(today.getTime() + i * DAY_MS);
           if (d.getDay() === 5) {
             fridayNoon = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12);
