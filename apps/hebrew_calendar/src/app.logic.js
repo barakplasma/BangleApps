@@ -132,7 +132,7 @@ function getCurrentEvents() {
     return {
       type: "txt",
       font: "12x20",
-      id: "currentEvents" 
+      id: "currentEvents" ,
       label: event.desc,
       pad: 2,
       bgCol: g.theme.bg,
