@@ -6,10 +6,9 @@
   "description": "Hebrew calendar clock: shows current Hebrew date and upcoming holidays with candle-lighting times. Computes events on-device using the My Location app for your coordinates.",
   "icon": "app.png",
   "allow_emulator": true,
-  "tags": "clocks,tools",
+  "tags": "clocks",
   "dependencies": { "mylocation": "app", "sched": "app" },
   "supports": [
-    "BANGLEJS",
     "BANGLEJS2"
   ],
   "type": "clock",
@@ -18,7 +17,6 @@
     {
       "name": "hebrew_calendar.app.js",
       "url": "app.js"
-            "no_minify": true
     },
     {
       "name": "hebrew_calendar.img",
