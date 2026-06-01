@@ -18,6 +18,7 @@
     {
       "name": "hebrew_calendar.app.js",
       "url": "app.js"
+            "no_minify": true
     },
     {
       "name": "hebrew_calendar.img",
