@@ -2,6 +2,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
 import alias from '@rollup/plugin-alias';
+import babel from '@rollup/plugin-babel';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, resolve as pathResolve } from 'path';
@@ -31,6 +32,14 @@ export default {
     }),
     resolve({ preferBuiltins: false }),
     commonjs(),
+    babel({
+      babelHelpers: 'bundled',
+      plugins: [
+        ['@babel/plugin-transform-class-properties', { loose: true }],
+        ['@babel/plugin-transform-private-methods', { loose: true }],
+      ],
+      include: /node_modules\/quick-lru/,
+    }),
     terser({
       compress: { passes: 2, drop_console: true },
       mangle: true,
