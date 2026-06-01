@@ -38,7 +38,7 @@ export default {
         ['@babel/plugin-transform-class-properties', { loose: true }],
         ['@babel/plugin-transform-private-methods', { loose: true }],
       ],
-      include: /node_modules\/quick-lru/,
+      include: '**/node_modules/quick-lru/**',
     }),
     terser({
       compress: { passes: 2, drop_console: true },
