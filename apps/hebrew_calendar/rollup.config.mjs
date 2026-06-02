@@ -34,12 +34,18 @@ export default {
     commonjs(),
     babel({
       babelHelpers: 'bundled',
-      plugins: [
-        ['@babel/plugin-transform-class-properties', { loose: true }],
-        ['@babel/plugin-transform-private-methods', { loose: true }],
-        ['@babel/plugin-transform-spread'],
-        ['@babel/plugin-transform-object-rest-spread'],
-        ['@babel/plugin-transform-template-literals'],
+      presets: [
+        ['@babel/preset-env', {
+          // forceAllTransforms: transpile all ES6+ syntax to ES5 regardless of targets.
+          // Espruino has no browserslist entry and lacks spread, destructuring, default
+          // params, for-of — features no single real browser target would remove.
+          forceAllTransforms: true,
+          // Let Rollup own ES module syntax so tree-shaking and IIFE output still work.
+          modules: false,
+          // Smaller, simpler output; matches previous loose: true on class transforms.
+          loose: true,
+          // Do NOT inject core-js polyfills — Espruino provides Map/Set/Promise natively.
+        }],
       ],
       include: '**/node_modules/**',
     }),
