@@ -1,20 +1,22 @@
 /**
- * Verifies that the built app.js contains no syntax constructs that crash
- * Espruino's JS interpreter.  These are specifically features Espruino lacks
- * despite partial ES6 support (confirmed from espruino.com/Features):
+ * Whitelist-style Espruino syntax compatibility check for the built app.js.
  *
- *   ❌ Array/call/object spread  ([...x], fn(...x), {...x})
- *   ❌ Destructuring patterns    (const [a,b]=x; const {a}=x; fn([a,b]))
- *   ❌ for-of loops
- *   ❌ Default function parameters
- *   ❌ Template literals (belt-and-suspenders; preset-env transforms these too)
- *   ❌ Generator functions / yield
- *   ❌ async/await
+ * Rather than blacklisting known-bad constructs (which silently misses any new
+ * unsupported feature), this test collects the SET of every AST node type that
+ * actually appears in the built bundle and asserts that set is a subset of
+ * APPROVED_NODE_TYPES — the node types Espruino's interpreter can parse.
  *
- * The test parses the built artifact with @babel/parser and walks the AST —
- * regex can't reliably distinguish syntax from string content.
+ * If a future dependency (or a build-config change) introduces a node type that
+ * isn't on the approved list, the test fails and names the offending type(s),
+ * forcing a deliberate decision: either Espruino genuinely supports it (add it
+ * to the list, with a citation) or the build must transpile it away.
  *
- * Prerequisite: run `npm run build` before `npm test` (or just run both).
+ * The approved list is grounded in espruino.com/Features. Espruino implements
+ * the full ES5 grammar plus a hand-picked subset of ES6. Everything NOT on the
+ * list — spread, destructuring patterns, for-of, default params, generators,
+ * async/await — is unsupported and must be removed by @babel/preset-env.
+ *
+ * Prerequisite: run `npm run build` before `npm test` (or run both).
  */
 
 import { existsSync, readFileSync } from 'fs';
@@ -27,122 +29,110 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const APP_JS_PATH = resolve(__dirname, '../app.js');
 
 // ---------------------------------------------------------------------------
-// Minimal recursive AST walker — no @babel/traverse dependency.
-// Visits every node whose `type` matches one of the keys in `visitors`.
+// APPROVED_NODE_TYPES — Babel AST node types Espruino's parser accepts.
+// Source: https://www.espruino.com/Features  (ES5 grammar + partial ES6).
+// Babel-specific literal/property node names are used (StringLiteral, not
+// Literal; ObjectProperty, not Property).
 // ---------------------------------------------------------------------------
-function walk(node, visitors) {
-  if (!node || typeof node !== 'object') return;
-  if (node.type && visitors[node.type]) visitors[node.type](node);
+const APPROVED_NODE_TYPES = new Set([
+  // ── Program structure ────────────────────────────────────────────────────
+  'File', 'Program', 'Directive', 'DirectiveLiteral',
+
+  // ── Identifiers & literals (ES5) ─────────────────────────────────────────
+  'Identifier',
+  'StringLiteral', 'NumericLiteral', 'BooleanLiteral', 'NullLiteral',
+  'RegExpLiteral',
+
+  // ── Statements (ES5) ─────────────────────────────────────────────────────
+  'ExpressionStatement', 'BlockStatement', 'EmptyStatement',
+  'DebuggerStatement', 'ReturnStatement', 'BreakStatement',
+  'ContinueStatement', 'IfStatement', 'SwitchStatement', 'SwitchCase',
+  'ThrowStatement', 'TryStatement', 'CatchClause', 'WhileStatement',
+  'DoWhileStatement', 'ForStatement', 'ForInStatement', 'LabeledStatement',
+  'WithStatement',
+
+  // ── Declarations (ES5 + let/const, which Espruino parses since 2v14) ──────
+  'VariableDeclaration', 'VariableDeclarator', 'FunctionDeclaration',
+
+  // ── Expressions (ES5) ────────────────────────────────────────────────────
+  'ArrayExpression', 'ObjectExpression', 'ObjectProperty', 'ObjectMethod',
+  'FunctionExpression', 'UnaryExpression', 'UpdateExpression',
+  'BinaryExpression', 'AssignmentExpression', 'LogicalExpression',
+  'MemberExpression', 'ConditionalExpression', 'CallExpression',
+  'NewExpression', 'SequenceExpression', 'ThisExpression',
+
+  // ── ES6 features Espruino DOES support natively (espruino.com/Features) ───
+  // Arrow functions (1v88), template literals (1v88), classes (1v96).
+  // Listed so the test does not flag them if a future build leaves them
+  // un-transpiled; Espruino can parse them.
+  'ArrowFunctionExpression',
+  'TemplateLiteral', 'TemplateElement', 'TaggedTemplateExpression',
+  'ClassDeclaration', 'ClassExpression', 'ClassBody', 'ClassMethod',
+  'Super',
+
+  // NOTE: deliberately EXCLUDED (Espruino cannot parse these — must be
+  // transpiled away by @babel/preset-env):
+  //   SpreadElement                  array / call / object spread  [...x]
+  //   ObjectPattern, ArrayPattern    destructuring targets
+  //   AssignmentPattern              default params / destructuring defaults
+  //   RestElement                    rest params / rest in destructuring
+  //   ForOfStatement                 for...of
+  //   YieldExpression                generators
+  //   AwaitExpression                async/await
+  //   OptionalMemberExpression,      optional chaining  ?.  (still in PR upstream)
+  //   OptionalCallExpression
+  //   ClassPrivateProperty,          private class fields  #x
+  //   ClassPrivateMethod
+]);
+
+// ---------------------------------------------------------------------------
+// Collect the set of all node types in the AST.
+// ---------------------------------------------------------------------------
+function collectNodeTypes(node, acc) {
+  if (!node || typeof node !== 'object') return acc;
+  if (typeof node.type === 'string') acc.add(node.type);
   for (const key of Object.keys(node)) {
-    if (key === 'loc' || key === 'start' || key === 'end' || key === 'type') continue;
+    if (key === 'loc' || key === 'start' || key === 'end' || key === 'range' ||
+        key === 'type' || key === 'comments' || key === 'leadingComments' ||
+        key === 'trailingComments' || key === 'innerComments' || key === 'tokens') {
+      continue;
+    }
     const child = node[key];
-    if (Array.isArray(child)) child.forEach(c => walk(c, visitors));
-    else if (child && typeof child === 'object' && child.type) walk(child, visitors);
+    if (Array.isArray(child)) {
+      for (const c of child) collectNodeTypes(c, acc);
+    } else if (child && typeof child === 'object' && typeof child.type === 'string') {
+      collectNodeTypes(child, acc);
+    }
   }
-}
-
-// Collect all nodes of a given type from the AST.
-function findAll(ast, ...types) {
-  const typeSet = new Set(types);
-  const found = [];
-  walk(ast, Object.fromEntries([...typeSet].map(t => [t, n => found.push(n)])));
-  return found;
+  return acc;
 }
 
 // ---------------------------------------------------------------------------
 
-describe('app.js — Espruino syntax compatibility', () => {
-  let ast;
+describe('app.js — Espruino syntax compatibility (whitelist)', () => {
+  let usedNodeTypes;
 
   beforeAll(() => {
     if (!existsSync(APP_JS_PATH)) {
       throw new Error('app.js not found — run `npm run build` first');
     }
     const code = readFileSync(APP_JS_PATH, 'utf8');
-    ast = parse(code, {
-      // script (not module) because the output is an IIFE, not ESM.
-      sourceType: 'script',
-      // Allow any syntax @babel/parser knows about so the parse itself never
-      // throws on valid syntax — we do our own structural checks below.
-      errorRecovery: false,
-    });
+    // sourceType 'script': the output is an IIFE, not an ES module.
+    const ast = parse(code, { sourceType: 'script' });
+    usedNodeTypes = collectNodeTypes(ast, new Set());
   });
 
-  it('app.js parses as valid JavaScript', () => {
-    expect(ast).toBeTruthy();
-    expect(ast.type).toBe('File');
-  });
+  it('uses only AST node types Espruino can parse', () => {
+    const disallowed = [...usedNodeTypes]
+      .filter(t => !APPROVED_NODE_TYPES.has(t))
+      .sort();
 
-  it('no array or call spread  ([...x] / fn(...x))', () => {
-    // SpreadElement = spread inside arrays and call arguments.
-    // RestElement   = rest params in function signatures — allowed by Espruino.
-    const nodes = findAll(ast, 'SpreadElement');
-    expect(nodes).toHaveLength(0);
-  });
-
-  it('no object spread / rest  ({...x})', () => {
-    // After @babel/preset-env these become Object.assign()-style helpers.
-    const spreads = findAll(ast, 'SpreadElement', 'RestElement').filter(n => {
-      // Only flag RestElement when it appears directly inside an ObjectExpression
-      // (object rest) or ObjectPattern (object destructuring rest).
-      // A RestElement inside a FunctionDeclaration/FunctionExpression params is fine.
-      return false; // SpreadElement already caught above; this filter is belt-and-suspenders.
-    });
-    // Verify no SpreadProperty / ExperimentalSpreadProperty legacy AST nodes either.
-    const legacy = findAll(ast, 'SpreadProperty', 'ExperimentalSpreadProperty');
-    expect(legacy).toHaveLength(0);
-  });
-
-  it('no destructuring patterns  (ArrayPattern / ObjectPattern)', () => {
-    // Espruino can't parse `const [a, b] = x` or `const { a } = x`.
-    // @babel/preset-env forceAllTransforms converts these to sequential assignments.
-    const nodes = findAll(ast, 'ArrayPattern', 'ObjectPattern');
-    expect(nodes).toHaveLength(0);
-  });
-
-  it('no for-of loops  (for...of)', () => {
-    // Espruino does not support for-of.  preset-env converts to iterator loops.
-    const nodes = findAll(ast, 'ForOfStatement');
-    expect(nodes).toHaveLength(0);
-  });
-
-  it('no default function parameters  (function f(x = 1) {})', () => {
-    // Espruino does not support default parameters.
-    // AssignmentPattern in a function's params array = default param.
-    const defaults = [];
-    walk(ast, {
-      AssignmentPattern(node) {
-        defaults.push(node);
-      },
-    });
-    expect(defaults).toHaveLength(0);
-  });
-
-  it('no template literals  (backtick strings)', () => {
-    // Espruino supports template literals since 1v88, but preset-env transforms
-    // them away.  This check confirms the transform ran on all node_modules code.
-    const nodes = findAll(ast, 'TemplateLiteral', 'TaggedTemplateExpression');
-    expect(nodes).toHaveLength(0);
-  });
-
-  it('no generator functions  (function* / yield)', () => {
-    // Espruino does not support generators.  preset-env compiles them away via
-    // the regenerator transform (using a bundled runtime helper).
-    const yields = findAll(ast, 'YieldExpression');
-    const genFns = findAll(ast, 'FunctionDeclaration', 'FunctionExpression').filter(
-      n => n.generator === true,
-    );
-    expect(yields).toHaveLength(0);
-    expect(genFns).toHaveLength(0);
-  });
-
-  it('no async / await', () => {
-    // Espruino does not support async/await.  @hebcal/noaa (the only async dep)
-    // is aliased to an empty stub, but verify nothing slipped through.
-    const awaits = findAll(ast, 'AwaitExpression');
-    const asyncFns = findAll(ast, 'FunctionDeclaration', 'FunctionExpression',
-      'ArrowFunctionExpression').filter(n => n.async === true);
-    expect(awaits).toHaveLength(0);
-    expect(asyncFns).toHaveLength(0);
+    expect(
+      disallowed,
+      `app.js contains AST node types not on the Espruino-approved whitelist: ` +
+      `${disallowed.join(', ')}. Either @babel/preset-env must transpile these ` +
+      `away, or — if Espruino genuinely supports them — add them to ` +
+      `APPROVED_NODE_TYPES with a citation.`,
+    ).toEqual([]);
   });
 });
