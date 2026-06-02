@@ -25,9 +25,13 @@ export default {
   plugins: [
     // Replace @hebcal/noaa (uses top-level await) with an empty stub.
     // We don't use Zmanim, so GeoLocation/NOAACalculator are never called.
+    // Replace quick-lru (extends Map + private fields + generators) with a
+    // plain-object cache stub — Map subclassing and generators are not safe
+    // on Espruino.
     alias({
       entries: [
         { find: '@hebcal/noaa', replacement: pathResolve(__dirname, 'src/noaa-stub.js') },
+        { find: 'quick-lru', replacement: pathResolve(__dirname, 'src/quick-lru-stub.js') },
       ],
     }),
     resolve({ preferBuiltins: false }),
@@ -63,15 +67,12 @@ export default {
     // Add ESLint directives AFTER terser so they are not stripped.
     // Declares globals and disables rules that are false positives in the
     // minified/transpiled bundle (the repo lints ./apps with --max-warnings 0):
-    //   Reflect            referenced by Babel's wrapNativeSuper class helper.
     //   no-unexpected-multiline  license comments inserted by Terser.
     //   no-func-assign     preset-env helpers reassign hoisted function names.
-    //   no-fallthrough     regenerator state-machine switch has no break/case.
-    //   no-cond-assign     minified assignments inside conditionals.
     {
       name: 'prepend-eslint-directives',
       renderChunk(code) {
-        const banner = '/* global Map, Set, Symbol, Intl, Temporal, Reflect */\n/* eslint-disable no-unexpected-multiline, no-func-assign, no-fallthrough, no-cond-assign */\n';
+        const banner = '/* global Map, Set, Symbol, Intl, Temporal */\n/* eslint-disable no-unexpected-multiline, no-func-assign */\n';
         return { code: banner + code, map: null };
       },
     },
