@@ -7,3 +7,4 @@
 0.07: fix customizer (skypack CDN 404/CORS - switched to esm.sh), crash from undefined "Upcoming" list item, duplicate layout ids, crash when calendar is exhausted, and non-numeric Location lat/lon
 0.08: upgrade @hebcal/core to v6; ship calendar as a separate data file instead of duplicating app.js in the customizer; remove dead code; allow emulator
 0.09: compute events on-device using bundled @hebcal/core; removed web customizer; use My Location app for coordinates; added settings for Israel/Diaspora mode; events always current, no expiry
+0.10: fix SyntaxError crash on-device by transpiling all ES6+ syntax to ES5 for the Espruino interpreter (@babel/preset-env); add whitelist test guarding the bundle against unsupported syntax/operators
