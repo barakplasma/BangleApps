@@ -3,6 +3,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
 import alias from '@rollup/plugin-alias';
 import babel from '@rollup/plugin-babel';
+import inject from '@rollup/plugin-inject';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, resolve as pathResolve } from 'path';
@@ -16,19 +17,28 @@ export default {
     format: 'iife',
     name: 'HebCal',
     inlineDynamicImports: true,
-    // Declare globals used by bundled @hebcal/core and disable two rules that are
-    // false positives in generated/bundled third-party code:
-    //   constructor-super: @hebcal/core class hierarchy triggers this incorrectly.
-    //   no-unexpected-multiline: license comments inserted by Terser cause this.
     footer: readFileSync('src/app.logic.js', 'utf8'),
   },
   plugins: [
     // Replace @hebcal/noaa (uses top-level await) with an empty stub.
     // We don't use Zmanim, so GeoLocation/NOAACalculator are never called.
+    // Replace quick-lru (extends Map + private fields + generators) with a
+    // plain-object cache stub — Map subclassing and generators are not safe
+    // on Espruino.
     alias({
       entries: [
         { find: '@hebcal/noaa', replacement: pathResolve(__dirname, 'src/noaa-stub.js') },
+        { find: 'quick-lru', replacement: pathResolve(__dirname, 'src/quick-lru-stub.js') },
       ],
+    }),
+    // Replace the global Map constructor with a plain-object stub.
+    // ES6 Map is valid syntax Espruino supports, but native Map subclassing
+    // (via Reflect.construct) is unreliable, and all actual key types in
+    // @hebcal/core and @hebcal/hdate are strings — a plain object covers them.
+    // Exclude our own stubs to avoid circular self-injection.
+    inject({
+      Map: [pathResolve(__dirname, 'src/map-stub.js'), 'default'],
+      exclude: ['**/map-stub.js', '**/quick-lru-stub.js', '**/noaa-stub.js'],
     }),
     resolve({ preferBuiltins: false }),
     commonjs(),
@@ -44,7 +54,7 @@ export default {
           modules: false,
           // Smaller, simpler output; matches previous loose: true on class transforms.
           loose: true,
-          // Do NOT inject core-js polyfills — Espruino provides Map/Set/Promise natively.
+          // Do NOT inject core-js polyfills — Espruino provides Set/Promise natively.
         }],
       ],
       include: '**/node_modules/**',
@@ -63,15 +73,12 @@ export default {
     // Add ESLint directives AFTER terser so they are not stripped.
     // Declares globals and disables rules that are false positives in the
     // minified/transpiled bundle (the repo lints ./apps with --max-warnings 0):
-    //   Reflect            referenced by Babel's wrapNativeSuper class helper.
     //   no-unexpected-multiline  license comments inserted by Terser.
     //   no-func-assign     preset-env helpers reassign hoisted function names.
-    //   no-fallthrough     regenerator state-machine switch has no break/case.
-    //   no-cond-assign     minified assignments inside conditionals.
     {
       name: 'prepend-eslint-directives',
       renderChunk(code) {
-        const banner = '/* global Map, Set, Symbol, Intl, Temporal, Reflect */\n/* eslint-disable no-unexpected-multiline, no-func-assign, no-fallthrough, no-cond-assign */\n';
+        const banner = '/* global Set, Symbol, Intl, Temporal */\n/* eslint-disable no-unexpected-multiline, no-func-assign */\n';
         return { code: banner + code, map: null };
       },
     },
