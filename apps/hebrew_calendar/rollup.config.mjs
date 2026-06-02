@@ -61,12 +61,17 @@ export default {
       },
     }),
     // Add ESLint directives AFTER terser so they are not stripped.
-    // Declares browser globals used by bundled @hebcal/core and disables two
-    // false-positive rules in generated/third-party code.
+    // Declares globals and disables rules that are false positives in the
+    // minified/transpiled bundle (the repo lints ./apps with --max-warnings 0):
+    //   Reflect            referenced by Babel's wrapNativeSuper class helper.
+    //   no-unexpected-multiline  license comments inserted by Terser.
+    //   no-func-assign     preset-env helpers reassign hoisted function names.
+    //   no-fallthrough     regenerator state-machine switch has no break/case.
+    //   no-cond-assign     minified assignments inside conditionals.
     {
       name: 'prepend-eslint-directives',
       renderChunk(code) {
-        const banner = '/* global Map, Set, Symbol, Intl, Temporal */\n/* eslint-disable constructor-super, no-unexpected-multiline */\n';
+        const banner = '/* global Map, Set, Symbol, Intl, Temporal, Reflect */\n/* eslint-disable no-unexpected-multiline, no-func-assign, no-fallthrough, no-cond-assign */\n';
         return { code: banner + code, map: null };
       },
     },

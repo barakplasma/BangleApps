@@ -1,5 +1,5 @@
-/* global Map, Set, Symbol, Intl, Temporal */
-/* eslint-disable constructor-super, no-unexpected-multiline */
+/* global Map, Set, Symbol, Intl, Temporal, Reflect */
+/* eslint-disable no-unexpected-multiline, no-func-assign, no-fallthrough, no-cond-assign */
 var HebCal=function(e){"use strict";
 /*! @hebcal/core v6.5.2, distributed under GPLv2 https://www.gnu.org/licenses/gpl-2.0.txt */var t=[0,31,28,31,30,31,30,31,31,30,31,30,31],n=[t,t.slice()];
 /*! @hebcal/hdate v0.22.3, distributed under GPLv2 https://www.gnu.org/licenses/gpl-2.0.txt */function r(e,t){return e-t*Math.floor(e/t)}function a(e,t){return Math.floor(e/t)}function i(e){return!(e%4||!(e%100)&&e%400)}function o(e){return"object"==typeof e&&Date.prototype.isPrototypeOf(e)}function s(e,t,n){var r=e-1;return 365*r+a(r,4)-a(r,100)+a(r,400)+a(367*t-362,12)+(t<=2?0:i(e)?-1:-2)+n}function u(e){if(!o(e))throw new TypeError("not a Date: "+e);if(isNaN(e.getTime()))throw new RangeError("Invalid Date");return s(e.getFullYear(),e.getMonth()+1,e.getDate())}function h(e){if("number"!=typeof e||isNaN(e))throw new TypeError("not a Number: "+e);var t=function(e){var t=e-1,n=a(t,146097),i=r(t,146097),o=a(i,36524),s=r(i,36524),u=a(s,1461),h=a(r(s,1461),365),c=400*n+100*o+4*u+h;return 4!==o&&4!==h?c+1:c}(e=Math.trunc(e)),n=a(12*(e-s(t,1,1)+(e<s(t,3,1)?0:i(t)?1:2))+373,367),o=e-s(t,n,1)+1,u=new Date(t,n-1,o);return t<100&&t>=0&&u.setFullYear(t),u}
