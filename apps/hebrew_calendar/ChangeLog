@@ -9,3 +9,4 @@
 0.09: compute events on-device using bundled @hebcal/core; removed web customizer; use My Location app for coordinates; added settings for Israel/Diaspora mode; events always current, no expiry
 0.10: fix SyntaxError crash on-device by transpiling all ES6+ syntax to ES5 for the Espruino interpreter (@babel/preset-env); add whitelist test guarding the bundle against unsupported syntax/operators
 0.11: stub quick-lru to eliminate Map subclassing, Reflect, and regenerator runtime from bundle; all three are unsupported on Espruino
+0.12: replace global Map with plain-object stub (@rollup/plugin-inject); tighten global-identifier whitelist to only what is verified in Espruino
