@@ -37,8 +37,11 @@ export default {
       plugins: [
         ['@babel/plugin-transform-class-properties', { loose: true }],
         ['@babel/plugin-transform-private-methods', { loose: true }],
+        ['@babel/plugin-transform-spread'],
+        ['@babel/plugin-transform-object-rest-spread'],
+        ['@babel/plugin-transform-template-literals'],
       ],
-      include: '**/node_modules/quick-lru/**',
+      include: '**/node_modules/**',
     }),
     terser({
       compress: { passes: 2, drop_console: true },
