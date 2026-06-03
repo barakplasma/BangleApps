@@ -32,6 +32,34 @@ export default {
         { find: 'quick-lru', replacement: pathResolve(__dirname, 'src/quick-lru-stub.js') },
       ],
     }),
+    // Stub large @hebcal/core modules that are only used when their corresponding
+    // CalOptions flags are set (sedrot, omer, molad, dailyLearning) — flags we never
+    // pass.  The alias plugin only intercepts bare-specifier imports; these are
+    // relative imports inside node_modules so we intercept them after resolution.
+    // Stubbing saves ~40 KB in the bundle, critical for Bangle.js 2's ~64 KB JS heap.
+    (function stubHebcalModules() {
+      const stubs = {
+        [pathResolve(__dirname, 'node_modules/@hebcal/core/dist/esm/sedra.js')]: pathResolve(__dirname, 'src/sedra-stub.js'),
+        [pathResolve(__dirname, 'node_modules/@hebcal/core/dist/esm/omer.js')]: pathResolve(__dirname, 'src/omer-stub.js'),
+        [pathResolve(__dirname, 'node_modules/@hebcal/core/dist/esm/DailyLearning.js')]: pathResolve(__dirname, 'src/dailylearning-stub.js'),
+        [pathResolve(__dirname, 'node_modules/@hebcal/core/dist/esm/molad.js')]: pathResolve(__dirname, 'src/molad-stub.js'),
+        [pathResolve(__dirname, 'node_modules/@hebcal/core/dist/esm/he.po.js')]: pathResolve(__dirname, 'src/he-po-stub.js'),
+        [pathResolve(__dirname, 'node_modules/@hebcal/core/dist/esm/he-x-NoNikud.po.js')]: pathResolve(__dirname, 'src/he-po-stub.js'),
+        [pathResolve(__dirname, 'node_modules/@hebcal/core/dist/esm/ashkenazi.po.js')]: pathResolve(__dirname, 'src/ashkenazi-po-stub.js'),
+        [pathResolve(__dirname, 'node_modules/@hebcal/hdate/dist/esm/he.po.js')]: pathResolve(__dirname, 'src/he-po-stub.js'),
+        [pathResolve(__dirname, 'node_modules/@hebcal/core/dist/esm/location.js')]: pathResolve(__dirname, 'src/location-stub.js'),
+        [pathResolve(__dirname, 'node_modules/@hebcal/core/dist/esm/MevarchimChodeshEvent.js')]: pathResolve(__dirname, 'src/mevarchim-stub.js'),
+        [pathResolve(__dirname, 'node_modules/@hebcal/core/dist/esm/YomKippurKatanEvent.js')]: pathResolve(__dirname, 'src/yomkippurkatan-stub.js'),
+      };
+      return {
+        name: 'stub-hebcal-modules',
+        resolveId(id, importer) {
+          if (!importer) return null;
+          const resolved = pathResolve(dirname(importer), id);
+          return stubs[resolved] || null;
+        },
+      };
+    })(),
     // Replace the global Map constructor with a plain-object stub.
     // ES6 Map is valid syntax Espruino supports, but native Map subclassing
     // (via Reflect.construct) is unreliable, and all actual key types in
@@ -39,7 +67,10 @@ export default {
     // Exclude our own stubs to avoid circular self-injection.
     inject({
       Map: [pathResolve(__dirname, 'src/map-stub.js'), 'default'],
-      exclude: ['**/map-stub.js', '**/quick-lru-stub.js', '**/noaa-stub.js'],
+      exclude: ['**/map-stub.js', '**/quick-lru-stub.js', '**/noaa-stub.js',
+                '**/sedra-stub.js', '**/omer-stub.js', '**/dailylearning-stub.js',
+                '**/molad-stub.js', '**/he-po-stub.js', '**/ashkenazi-po-stub.js',
+                '**/location-stub.js', '**/mevarchim-stub.js', '**/yomkippurkatan-stub.js'],
     }),
     resolve({ preferBuiltins: false }),
     commonjs(),
