@@ -17,6 +17,7 @@ export default {
     format: 'iife',
     name: 'HebCal',
     inlineDynamicImports: true,
+    intro: 'if(!String.prototype.normalize)String.prototype.normalize=function(){return String(this);};',
     footer: readFileSync('src/app.logic.js', 'utf8'),
   },
   plugins: [
