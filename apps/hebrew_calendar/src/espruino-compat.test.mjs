@@ -206,7 +206,8 @@ const APPROVED_GLOBALS = new Set([
   'setTimeout', 'clearTimeout',
 
   // ── Espruino-documented ES6+ globals ─────────────────────────────────────
-  'Set',     // ES6 Set: 2v00 — used for parsha doubles and unknown-options tracking
+  // Set is intentionally absent: injected as a plain-object stub via @rollup/plugin-inject,
+  // so no host Set global is needed.
   'Symbol',  // 1v96 — used as Symbol.iterator / Symbol.toStringTag with '@@' fallback
   'Intl',    // Intl.DateTimeFormat: 2v22 — timezone-aware candle-lighting times
 

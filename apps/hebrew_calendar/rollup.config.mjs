@@ -67,7 +67,11 @@ export default {
     // Exclude our own stubs to avoid circular self-injection.
     inject({
       Map: [pathResolve(__dirname, 'src/map-stub.js'), 'default'],
-      exclude: ['**/map-stub.js', '**/quick-lru-stub.js', '**/noaa-stub.js',
+      // Replace Set too — Espruino supports Set since 2v00 but it is absent on
+      // older firmware and some edge-case contexts. Replacing unconditionally
+      // (just like Map) makes the bundle firmware-version-independent.
+      Set: [pathResolve(__dirname, 'src/set-stub.js'), 'default'],
+      exclude: ['**/map-stub.js', '**/set-stub.js', '**/quick-lru-stub.js', '**/noaa-stub.js',
                 '**/sedra-stub.js', '**/omer-stub.js', '**/dailylearning-stub.js',
                 '**/molad-stub.js', '**/he-po-stub.js', '**/ashkenazi-po-stub.js',
                 '**/location-stub.js', '**/mevarchim-stub.js', '**/yomkippurkatan-stub.js'],
@@ -86,7 +90,7 @@ export default {
           modules: false,
           // Smaller, simpler output; matches previous loose: true on class transforms.
           loose: true,
-          // Do NOT inject core-js polyfills — Espruino provides Set/Promise natively.
+          // Do NOT inject core-js polyfills — Map/Set are already stubbed above.
         }],
       ],
       include: '**/node_modules/**',
@@ -110,7 +114,7 @@ export default {
     {
       name: 'prepend-eslint-directives',
       renderChunk(code) {
-        const banner = '/* global Set, Symbol, Intl, Temporal */\n/* eslint-disable no-unexpected-multiline, no-func-assign */\n';
+        const banner = '/* global Symbol, Intl, Temporal */\n/* eslint-disable no-unexpected-multiline, no-func-assign */\n';
         return { code: banner + code, map: null };
       },
     },

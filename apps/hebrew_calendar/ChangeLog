@@ -12,3 +12,4 @@
 0.12: replace global Map with plain-object stub (@rollup/plugin-inject); tighten global-identifier whitelist to only what is verified in Espruino
 0.13: polyfill String.prototype.normalize (not implemented in Espruino) to fix crash on startup
 0.14: stub 8 large unused @hebcal modules to shrink bundle from 83 KB to 62 KB (fixes OUT OF MEMORY on Bangle.js 2); add emulator integration test
+0.15: replace global Set with plain-object stub (fixes ReferenceError on older Espruino firmware); fix emulator test to not mask device incompatibilities with Node.js builtins

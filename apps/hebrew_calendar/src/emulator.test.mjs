@@ -108,7 +108,9 @@ function buildContext() {
     Error, TypeError, RangeError,
     Math, JSON,
     parseInt, parseFloat, isNaN, NaN, Infinity,
-    Set, Symbol,
+    // Set is NOT provided: it is injected as a plain-object stub by @rollup/plugin-inject,
+    // so the bundle is self-contained and must not rely on a host Set global.
+    Symbol,
     Int32Array,
     Date: FixedDate,
     undefined,
