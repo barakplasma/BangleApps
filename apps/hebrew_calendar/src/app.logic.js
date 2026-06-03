@@ -235,9 +235,18 @@ Bangle.setUI("clock");
 Bangle.loadWidgets();
 Bangle.drawWidgets();
 
-hebrewCalendar = computeEvents();
-layout = makeLayout();
-draw();
+try {
+  hebrewCalendar = computeEvents();
+  layout = makeLayout();
+  draw();
+} catch(e) {
+  g.clear();
+  g.setFont("6x8");
+  g.setFontAlign(0,0);
+  g.drawString("HebCal error:", g.getWidth()/2, 80);
+  g.drawString(e.toString().substring(0,30), g.getWidth()/2, 100);
+  g.drawString(e.toString().substring(30,60), g.getWidth()/2, 116);
+}
 
 // Return the next sunset time (today's if it's still in the future, otherwise tomorrow's).
 function nextSunset() {
